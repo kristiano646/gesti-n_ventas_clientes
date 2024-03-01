@@ -1,0 +1,90 @@
+CREATE TABLE Clientes (
+    ID_CLIENTE INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255),
+    email VARCHAR(255),
+    telefono VARCHAR(20),
+    direccion VARCHAR(255)
+    
+);
+
+CREATE TABLE Zonas (
+    ID_ZONA INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_zona VARCHAR(255),
+    descripcion TEXT
+    
+);
+
+CREATE TABLE Productos (
+    ID_PRODUCTO INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255),
+    descripcion TEXT,
+    precio DECIMAL(10, 2),
+    stock INT,
+    categoria VARCHAR(100)
+   
+);
+
+CREATE TABLE Ventas (
+    ID_VENTA INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente INT,
+    id_vendedor INT,
+    id_zona INT,
+    fecha DATETIME,
+    monto_total DECIMAL(10, 2),
+    FOREIGN KEY (id_cliente) REFERENCES Clientes(ID_CLIENTE),
+    FOREIGN KEY (id_zona) REFERENCES Zonas(ID_ZONA)
+  
+);
+
+CREATE TABLE Detalles_Ventas (
+    ID_DETALLE_VENTA INT AUTO_INCREMENT PRIMARY KEY,
+    id_venta INT,
+    id_producto INT,
+    cantidad INT,
+    precio_unitario DECIMAL(10, 2),
+    subtotal DECIMAL(10, 2),
+    FOREIGN KEY (id_venta) REFERENCES Ventas(ID_VENTA),
+    FOREIGN KEY (id_producto) REFERENCES Productos(ID_PRODUCTO)
+    
+);
+
+
+
+
+
+SELECT v.id_vendedor, z.nombre_zona, COUNT(v.id_venta) AS cantidad_ventas
+FROM Ventas v
+INNER JOIN Zonas z ON v.id_zona = z.ID_ZONA
+GROUP BY v.id_vendedor, z.nombre_zona
+ORDER BY v.id_vendedor, COUNT(v.id_venta) DESC;
+
+SELECT z.ID_ZONA, z.nombre_zona
+FROM Zonas z
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM Ventas v
+    WHERE v.id_zona = z.ID_ZONA
+    AND v.fecha BETWEEN 'fecha_inicio' AND 'fecha_fin'
+);
+
+SELECT DISTINCT v.id_vendedor
+FROM Ventas v
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM Ventas v2
+    WHERE v.id_vendedor = v2.id_vendedor
+    AND v2.fecha BETWEEN 'fecha_inicio' AND 'fecha_fin'
+);
+
+SELECT c.ID_CLIENTE,
+       c.nombre AS nombre_cliente,
+       z.nombre_zona AS zona,
+       SUM(CASE WHEN YEAR(v.fecha) = 2020 THEN v.monto_total ELSE 0 END) AS ventas_2020,
+       SUM(CASE WHEN YEAR(v.fecha) = 2021 THEN v.monto_total ELSE 0 END) AS ventas_2021,
+       SUM(CASE WHEN YEAR(v.fecha) = 2022 THEN v.monto_total ELSE 0 END) AS ventas_2022,
+       SUM(CASE WHEN YEAR(v.fecha) = 2023 THEN v.monto_total ELSE 0 END) AS ventas_2023
+FROM Clientes c
+JOIN Ventas v ON c.ID_CLIENTE = v.id_cliente
+JOIN Zonas z ON v.id_zona = z.ID_ZONA
+GROUP BY c.ID_CLIENTE, c.nombre, z.nombre_zona;
+
